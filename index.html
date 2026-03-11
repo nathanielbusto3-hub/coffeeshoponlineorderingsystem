@@ -1,0 +1,895 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Daily Grind | Premium Coffee Experience</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Poppins:wght@300;400;500;600;700&display=swap');
+
+        :root {
+            --coffee-dark: #2C1810;
+            --coffee-medium: #6F4E37;
+            --coffee-light: #C0A080;
+            --coffee-cream: #F5F5DC;
+        }
+
+        body { font-family: 'Poppins', sans-serif; background-color: #fcfcfc; color: #333; }
+        h1, h2, h3, .brand-font { font-family: 'Playfair Display', serif; }
+
+        .hero-gradient {
+            background: linear-gradient(rgba(0,0,0,0.65), rgba(0,0,0,0.65)), url('https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?ixlib=rb-1.2.1&auto=format&fit=crop&w=1920&q=80');
+            background-size: cover;
+            background-position: center;
+        }
+
+        .cart-sidebar { transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1); z-index: 100; }
+        .btn-coffee { background-color: var(--coffee-medium); color: white; transition: all 0.3s; }
+        .btn-coffee:hover { background-color: var(--coffee-dark); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(44, 24, 16, 0.2); }
+        
+        .admin-sidebar { background-color: #0f172a; color: white; }
+        .status-badge { padding: 4px 12px; border-radius: 99px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: var(--coffee-light); border-radius: 10px; }
+
+        .active-tab { background-color: rgba(255,255,255,0.1); border-left: 4px solid var(--coffee-light); }
+        
+        .card-hover { transition: all 0.3s ease; }
+        .card-hover:hover { transform: translateY(-5px); box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1); }
+    </style>
+</head>
+<body class="overflow-x-hidden">
+
+    <!-- Global Notification System -->
+    <div id="toast-container" class="fixed bottom-5 right-5 z-[200] space-y-3"></div>
+
+    <!-- Navigation -->
+    <nav id="main-nav" class="bg-white/95 backdrop-blur-md shadow-sm fixed w-full z-50 top-0 transition-all duration-300">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-20 items-center">
+                <div class="flex items-center gap-3 cursor-pointer group" onclick="showSection('hero')">
+                    <div class="w-10 h-10 bg-[#6F4E37] rounded-lg flex items-center justify-center text-white transition-transform group-hover:rotate-12">
+                        <i class="fas fa-mug-hot text-xl"></i>
+                    </div>
+                    <span class="text-2xl font-bold brand-font text-[#2C1810]">The Daily Grind</span>
+                </div>
+                
+                <div class="hidden md:flex space-x-10 font-medium items-center">
+                    <a href="#" onclick="showSection('hero')" class="text-gray-600 hover:text-[#6F4E37] transition-colors">Home</a>
+                    <a href="#" onclick="showSection('menu')" class="text-gray-600 hover:text-[#6F4E37] transition-colors">Menu</a>
+                    <a href="#" onclick="showSection('login')" class="text-gray-400 hover:text-[#6F4E37] transition-colors flex items-center gap-2">
+                        <i class="fas fa-user-shield"></i> Staff
+                    </a>
+                </div>
+
+                <div class="flex items-center gap-6">
+                    <button id="cart-toggle" onclick="openSidebar()" class="relative p-2 text-gray-700 hover:text-[#6F4E37] transition-transform active:scale-95">
+                        <i class="fas fa-shopping-bag text-2xl"></i>
+                        <span id="cart-count" class="absolute -top-1 -right-1 bg-[#6F4E37] text-white text-[10px] w-5 h-5 rounded-full flex items-center justify-center border-2 border-white">0</span>
+                    </button>
+                    <button class="md:hidden text-2xl text-gray-700"><i class="fas fa-bars"></i></button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Cart Sidebar -->
+    <div id="cart-sidebar" class="fixed right-0 top-0 h-full w-full sm:w-[400px] bg-white shadow-2xl translate-x-full cart-sidebar flex flex-col">
+        <div class="p-6 border-b flex justify-between items-center bg-[#2C1810] text-white">
+            <div class="flex items-center gap-3">
+                <i class="fas fa-shopping-cart text-xl text-[#C0A080]"></i>
+                <h2 class="text-xl font-bold brand-font">Your Order</h2>
+            </div>
+            <button onclick="closeSidebar()" class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/10 transition-colors">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
+        <div id="cart-items" class="flex-grow overflow-y-auto p-6 space-y-6">
+            <!-- Items injected here -->
+        </div>
+
+        <div id="cart-footer" class="p-8 border-t bg-gray-50 hidden">
+            <div class="space-y-3 mb-6">
+                <div class="flex justify-between text-gray-500">
+                    <span>Subtotal</span>
+                    <span id="cart-subtotal">$0.00</span>
+                </div>
+                <div class="flex justify-between text-gray-500">
+                    <span>Estimated Tax</span>
+                    <span id="cart-tax">$0.00</span>
+                </div>
+                <div class="flex justify-between text-xl font-bold text-[#2C1810] pt-3 border-t">
+                    <span>Total</span>
+                    <span id="cart-total">$0.00</span>
+                </div>
+            </div>
+            <button onclick="showSection('checkout')" class="w-full py-4 btn-coffee rounded-xl font-bold uppercase tracking-widest shadow-lg">Checkout Now</button>
+        </div>
+    </div>
+    <div id="overlay" class="fixed inset-0 bg-black/60 hidden z-[90] backdrop-blur-sm" onclick="closeSidebar()"></div>
+
+    <!-- UI SECTIONS -->
+    <main class="mt-20">
+        <!-- 1. Hero -->
+        <section id="hero-section" class="hero-gradient h-[90vh] flex items-center text-white relative">
+            <div class="max-w-7xl mx-auto px-6 w-full">
+                <div class="max-w-2xl animate-fade-in-up">
+                    <span class="inline-block px-4 py-1 bg-[#C0A080]/30 border border-[#C0A080]/50 rounded-full text-[#C0A080] text-sm font-semibold mb-6">ESTABLISHED 2024</span>
+                    <h1 class="text-6xl md:text-8xl font-bold mb-8 leading-tight">Awaken Your <br><span class="text-[#C0A080]">Senses.</span></h1>
+                    <p class="text-xl mb-10 text-gray-200 leading-relaxed font-light">Artisan coffee roasted in small batches, delivered from our roastery straight to your cup.</p>
+                    <div class="flex flex-col sm:flex-row gap-4">
+                        <button onclick="showSection('menu')" class="bg-[#C0A080] hover:bg-white text-[#2C1810] px-10 py-5 rounded-full font-bold text-lg transition-all flex items-center justify-center gap-3">
+                            Order Online <i class="fas fa-arrow-right text-sm"></i>
+                        </button>
+                        <button class="border border-white/30 hover:bg-white/10 px-10 py-5 rounded-full font-bold text-lg transition-all">
+                            Our Story
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="absolute bottom-10 left-1/2 -translate-x-1/2 animate-bounce opacity-50">
+                <i class="fas fa-chevron-down text-2xl"></i>
+            </div>
+        </section>
+
+        <!-- 2. Menu (Customer) -->
+        <section id="menu-section" class="py-24 hidden">
+            <div class="max-w-7xl mx-auto px-6">
+                <div class="text-center mb-16">
+                    <h2 class="text-4xl md:text-5xl font-bold mb-4 brand-font">Crafted With Love</h2>
+                    <p class="text-gray-500 max-w-lg mx-auto">Explore our curated selection of hot brews, chilled refreshers, and artisanal pastries.</p>
+                </div>
+
+                <div class="flex flex-wrap justify-center gap-3 mb-16">
+                    <button onclick="filterMenu('all')" class="cat-filter active px-8 py-3 rounded-full bg-[#6F4E37] text-white font-semibold transition-all shadow-md">All Items</button>
+                    <button onclick="filterMenu('Hot')" class="cat-filter px-8 py-3 rounded-full bg-white border border-gray-200 text-gray-600 font-semibold hover:border-[#6F4E37] transition-all">Hot Coffee</button>
+                    <button onclick="filterMenu('Cold')" class="cat-filter px-8 py-3 rounded-full bg-white border border-gray-200 text-gray-600 font-semibold hover:border-[#6F4E37] transition-all">Cold Brews</button>
+                    <button onclick="filterMenu('Pastry')" class="cat-filter px-8 py-3 rounded-full bg-white border border-gray-200 text-gray-600 font-semibold hover:border-[#6F4E37] transition-all">Pastries</button>
+                </div>
+
+                <div id="menu-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+                    <!-- Menu items injected here -->
+                </div>
+            </div>
+        </section>
+
+        <!-- 3. Checkout -->
+        <section id="checkout-section" class="py-24 hidden bg-gray-50">
+            <div class="max-w-6xl mx-auto px-6">
+                <div class="flex flex-col lg:flex-row gap-12">
+                    <!-- Delivery Info -->
+                    <div class="flex-grow space-y-8">
+                        <div class="bg-white p-8 md:p-10 rounded-3xl shadow-sm border border-gray-100">
+                            <h2 class="text-3xl font-bold mb-8 flex items-center gap-4 brand-font">
+                                <span class="w-10 h-10 bg-[#F5F5DC] rounded-full flex items-center justify-center text-[#6F4E37]"><i class="fas fa-truck"></i></span>
+                                Checkout Details
+                            </h2>
+                            <form id="order-form" class="space-y-6">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div class="space-y-2">
+                                        <label class="text-sm font-semibold text-gray-600">Full Name</label>
+                                        <input type="text" id="order-name" placeholder="John Doe" required class="w-full p-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#6F4E37] outline-none">
+                                    </div>
+                                    <div class="space-y-2">
+                                        <label class="text-sm font-semibold text-gray-600">Phone Number</label>
+                                        <input type="tel" id="order-phone" placeholder="(555) 000-0000" required class="w-full p-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#6F4E37] outline-none">
+                                    </div>
+                                </div>
+                                <div class="space-y-2">
+                                    <label class="text-sm font-semibold text-gray-600">Delivery Address</label>
+                                    <textarea id="order-address" rows="3" placeholder="123 Coffee St, Bean City" required class="w-full p-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#6F4E37] outline-none"></textarea>
+                                </div>
+                                <button type="submit" class="w-full py-5 btn-coffee rounded-2xl font-bold text-lg uppercase tracking-widest shadow-xl">Place Your Order</button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Order Summary -->
+                    <div class="w-full lg:w-[400px] shrink-0">
+                        <div class="bg-[#2C1810] text-white p-8 rounded-3xl sticky top-28 shadow-2xl">
+                            <h3 class="text-2xl font-bold mb-6 brand-font">Order Summary</h3>
+                            <div id="checkout-summary-list" class="space-y-4 max-h-[400px] overflow-y-auto mb-8 pr-2">
+                                <!-- Items injected here -->
+                            </div>
+                            <div class="border-t border-white/10 pt-6 space-y-3">
+                                <div class="flex justify-between text-white/60">
+                                    <span>Subtotal</span>
+                                    <span id="summary-subtotal">$0.00</span>
+                                </div>
+                                <div class="flex justify-between text-white/60">
+                                    <span>Delivery Fee</span>
+                                    <span class="text-green-400">FREE</span>
+                                </div>
+                                <div class="flex justify-between text-2xl font-bold pt-4 border-t border-white/20">
+                                    <span>Total</span>
+                                    <span id="summary-total">$0.00</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 4. Login Section -->
+        <section id="login-section" class="py-40 hidden flex items-center justify-center px-4 bg-gray-50">
+            <div class="bg-white p-10 rounded-3xl shadow-2xl w-full max-w-md border text-center animate-fade-in">
+                <div class="w-20 h-20 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-8 text-gray-400">
+                    <i class="fas fa-lock text-3xl"></i>
+                </div>
+                <h2 class="text-3xl font-bold mb-2 brand-font">Staff Access</h2>
+                <p class="text-gray-400 mb-8">Please enter your management password.</p>
+                <div class="relative mb-6">
+                    <input type="password" id="admin-pass" placeholder="Password" class="w-full p-4 pl-12 border border-gray-200 rounded-xl focus:ring-2 focus:ring-gray-800 outline-none">
+                    <i class="fas fa-key absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                </div>
+                <button onclick="handleLogin()" class="w-full py-4 bg-gray-800 text-white rounded-xl font-bold hover:bg-black transition-all shadow-lg">Login to Dashboard</button>
+                <p class="text-xs text-gray-400 mt-6">Hint: use "admin" to log in.</p>
+            </div>
+        </section>
+
+        <!-- 5. Admin Dashboard -->
+        <section id="admin-section" class="hidden min-h-screen bg-[#f8fafc]">
+            <div class="flex flex-col lg:flex-row min-h-screen">
+                <!-- Admin Sidebar -->
+                <div class="w-full lg:w-72 admin-sidebar p-8 flex flex-col">
+                    <div class="flex items-center gap-3 mb-12">
+                        <div class="w-8 h-8 bg-[#C0A080] rounded flex items-center justify-center text-[#2C1810]">
+                            <i class="fas fa-terminal text-sm"></i>
+                        </div>
+                        <span class="text-xl font-bold tracking-tight">DailyGrind <span class="text-[#C0A080]">OS</span></span>
+                    </div>
+
+                    <div class="space-y-2 flex-grow">
+                        <p class="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-4">Core Management</p>
+                        <button onclick="showAdminTab('overview')" class="admin-tab-btn active-tab w-full p-4 rounded-xl text-left flex items-center gap-4 transition-all">
+                            <i class="fas fa-chart-pie w-5 opacity-70"></i> Overview
+                        </button>
+                        <button onclick="showAdminTab('orders')" class="admin-tab-btn w-full p-4 rounded-xl text-left flex items-center gap-4 hover:bg-white/5 transition-all">
+                            <i class="fas fa-shopping-cart w-5 opacity-70"></i> Live Orders
+                            <span id="admin-order-count-badge" class="ml-auto bg-red-500 text-white text-[10px] px-2 py-0.5 rounded-full">0</span>
+                        </button>
+                        <button onclick="showAdminTab('inventory')" class="admin-tab-btn w-full p-4 rounded-xl text-left flex items-center gap-4 hover:bg-white/5 transition-all">
+                            <i class="fas fa-concierge-bell w-5 opacity-70"></i> Menu Manager
+                        </button>
+                    </div>
+
+                    <div class="pt-8 border-t border-white/10">
+                        <button onclick="showSection('hero')" class="w-full p-4 text-sm text-gray-400 hover:text-white flex items-center gap-3 transition-all">
+                            <i class="fas fa-power-off"></i> Exit System
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Admin Content -->
+                <div class="flex-grow p-6 lg:p-12 overflow-x-hidden">
+                    
+                    <!-- Tab: Overview -->
+                    <div id="admin-overview" class="admin-content-pane space-y-10">
+                        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                            <div>
+                                <h2 class="text-3xl font-bold text-slate-900">Dashboard Overview</h2>
+                                <p class="text-slate-500">Real-time performance metrics</p>
+                            </div>
+                            <div class="bg-white p-2 rounded-xl border flex items-center gap-2 shadow-sm">
+                                <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse ml-2"></span>
+                                <span class="text-xs font-bold text-slate-600 pr-4">SYSTEM LIVE: <span id="current-time">00:00:00</span></span>
+                            </div>
+                        </div>
+
+                        <!-- Stats Grid -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                            <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
+                                <p class="text-slate-400 text-xs font-bold uppercase tracking-wider mb-2">Today's Revenue</p>
+                                <h3 class="text-3xl font-bold text-slate-900" id="stat-revenue">$0.00</h3>
+                                <div class="mt-4 flex items-center text-green-500 text-xs font-bold">
+                                    <i class="fas fa-arrow-up mr-1"></i> 12.5% <span class="text-slate-400 font-normal ml-1">vs yesterday</span>
+                                </div>
+                            </div>
+                            <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
+                                <p class="text-slate-400 text-xs font-bold uppercase tracking-wider mb-2">Total Orders</p>
+                                <h3 class="text-3xl font-bold text-slate-900" id="stat-orders">0</h3>
+                                <div class="mt-4 flex items-center text-blue-500 text-xs font-bold">
+                                    <i class="fas fa-sync-alt mr-1"></i> Live <span class="text-slate-400 font-normal ml-1">updates every 5s</span>
+                                </div>
+                            </div>
+                            <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
+                                <p class="text-slate-400 text-xs font-bold uppercase tracking-wider mb-2">Active Customers</p>
+                                <h3 class="text-3xl font-bold text-slate-900" id="stat-customers">0</h3>
+                                <div class="mt-4 flex items-center text-orange-500 text-xs font-bold">
+                                    <i class="fas fa-users mr-1"></i> Unique <span class="text-slate-400 font-normal ml-1">returning clients</span>
+                                </div>
+                            </div>
+                            <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
+                                <p class="text-slate-400 text-xs font-bold uppercase tracking-wider mb-2">Popular Item</p>
+                                <h3 class="text-lg font-bold text-slate-900 truncate" id="stat-top-item">Loading...</h3>
+                                <div class="mt-4 flex items-center text-purple-500 text-xs font-bold">
+                                    <i class="fas fa-star mr-1"></i> Bestseller <span class="text-slate-400 font-normal ml-1">this week</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 xl:grid-cols-2 gap-8">
+                            <div class="bg-white p-8 rounded-3xl shadow-sm border border-slate-100">
+                                <h3 class="text-xl font-bold mb-6">Recent Order Activity</h3>
+                                <div id="activity-list" class="space-y-6">
+                                    <!-- Dynamic logs -->
+                                </div>
+                            </div>
+                            <div class="bg-white p-8 rounded-3xl shadow-sm border border-slate-100">
+                                <h3 class="text-xl font-bold mb-6">Inventory Status</h3>
+                                <div id="inventory-mini-list" class="space-y-4">
+                                    <!-- Inventory health -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tab: Orders -->
+                    <div id="admin-orders" class="admin-content-pane hidden space-y-8">
+                        <div class="flex justify-between items-end">
+                            <div>
+                                <h2 class="text-3xl font-bold text-slate-900">Active Order Pipeline</h2>
+                                <p class="text-slate-500">Manage incoming and processing orders</p>
+                            </div>
+                            <div class="flex gap-3">
+                                <button onclick="clearAllOrders()" class="text-xs bg-red-50 text-red-600 px-4 py-2 rounded-lg font-bold hover:bg-red-100 transition-colors">Clear History</button>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-left">
+                                    <thead>
+                                        <tr class="bg-slate-50 text-slate-400 text-[10px] uppercase tracking-widest font-bold">
+                                            <th class="p-6">Reference</th>
+                                            <th class="p-6">Client Info</th>
+                                            <th class="p-6">Manifest</th>
+                                            <th class="p-6">Amount</th>
+                                            <th class="p-6">Status</th>
+                                            <th class="p-6 text-right">Operational Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="admin-orders-list" class="divide-y divide-slate-100">
+                                        <!-- Order rows -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tab: Inventory CRUD -->
+                    <div id="admin-inventory" class="admin-content-pane hidden space-y-8">
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <h2 class="text-3xl font-bold text-slate-900">Menu Architect</h2>
+                                <p class="text-slate-500">Manage digital menu items and availability</p>
+                            </div>
+                            <button onclick="openMenuModal()" class="px-6 py-3 bg-[#6F4E37] text-white rounded-2xl font-bold shadow-lg hover:bg-[#2C1810] transition-all flex items-center gap-2">
+                                <i class="fas fa-plus"></i> Create New Item
+                            </button>
+                        </div>
+                        
+                        <div id="admin-menu-list" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                            <!-- Items go here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Success Modal -->
+    <div id="success-modal" class="fixed inset-0 flex items-center justify-center z-[200] hidden">
+        <div class="bg-white p-12 rounded-[40px] shadow-2xl text-center max-w-md mx-4 animate-scale-in">
+            <div class="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-8">
+                <i class="fas fa-check text-4xl text-green-500"></i>
+            </div>
+            <h2 class="text-3xl font-bold mb-4 brand-font">Order Transmitted!</h2>
+            <p class="text-gray-500 mb-10 leading-relaxed">Our baristas have been notified. We'll start grinding your beans immediately.</p>
+            <button onclick="resetUI()" class="w-full py-5 btn-coffee rounded-2xl font-bold shadow-xl">Continue Exploring</button>
+        </div>
+        <div class="fixed inset-0 bg-black/70 backdrop-blur-md -z-10"></div>
+    </div>
+
+    <!-- Menu Item Modal (Add/Edit) -->
+    <div id="menu-modal" class="fixed inset-0 flex items-center justify-center z-[200] hidden">
+        <div class="bg-white p-10 rounded-3xl shadow-2xl w-full max-w-lg mx-4">
+            <div class="flex justify-between items-center mb-8">
+                <h3 id="modal-title" class="text-2xl font-bold brand-font">Configure Item</h3>
+                <button onclick="closeMenuModal()" class="text-gray-400 hover:text-black"><i class="fas fa-times"></i></button>
+            </div>
+            <form id="menu-item-form" class="space-y-4">
+                <input type="hidden" id="edit-id">
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="col-span-2 sm:col-span-1 space-y-1">
+                        <label class="text-[10px] font-bold text-gray-500 uppercase">Item Name</label>
+                        <input type="text" id="m-name" placeholder="E.g. Latte" required class="w-full p-3 bg-gray-50 border border-gray-100 rounded-xl outline-none focus:ring-2 focus:ring-[#6F4E37]">
+                    </div>
+                    <div class="col-span-2 sm:col-span-1 space-y-1">
+                        <label class="text-[10px] font-bold text-gray-500 uppercase">Category</label>
+                        <select id="m-cat" class="w-full p-3 bg-gray-50 border border-gray-100 rounded-xl outline-none focus:ring-2 focus:ring-[#6F4E37]">
+                            <option value="Hot">Hot Coffee</option>
+                            <option value="Cold">Cold Brew</option>
+                            <option value="Pastry">Pastry</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="space-y-1">
+                        <label class="text-[10px] font-bold text-gray-500 uppercase">Base Price ($)</label>
+                        <input type="number" step="0.01" id="m-price" placeholder="4.50" required class="w-full p-3 bg-gray-50 border border-gray-100 rounded-xl outline-none focus:ring-2 focus:ring-[#6F4E37]">
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-[10px] font-bold text-gray-500 uppercase">Image URL</label>
+                        <input type="text" id="m-img" placeholder="https://..." required class="w-full p-3 bg-gray-50 border border-gray-100 rounded-xl outline-none focus:ring-2 focus:ring-[#6F4E37]">
+                    </div>
+                </div>
+                <div class="space-y-1">
+                    <label class="text-[10px] font-bold text-gray-500 uppercase">Short Description</label>
+                    <textarea id="m-desc" rows="3" placeholder="Notes on flavor profile..." required class="w-full p-3 bg-gray-50 border border-gray-100 rounded-xl outline-none focus:ring-2 focus:ring-[#6F4E37]"></textarea>
+                </div>
+                <div class="flex gap-4 pt-6">
+                    <button type="button" onclick="closeMenuModal()" class="flex-1 py-4 bg-gray-100 rounded-xl font-bold hover:bg-gray-200">Cancel</button>
+                    <button type="submit" class="flex-1 py-4 bg-[#6F4E37] text-white rounded-xl font-bold hover:bg-[#2C1810] shadow-lg">Save Configuration</button>
+                </div>
+            </form>
+        </div>
+        <div class="fixed inset-0 bg-black/70 backdrop-blur-sm -z-10"></div>
+    </div>
+
+    <script>
+        // State Management
+        let menuItems = [
+            { id: 1, name: 'Velvet Espresso', category: 'Hot', price: 3.50, image: 'https://images.unsplash.com/photo-1510591509098-f4fdc6d0ff04?w=400', desc: 'A rich, multi-layered shot of our single-origin house roast.' },
+            { id: 2, name: 'Cloud Cold Brew', category: 'Cold', price: 5.75, image: 'https://images.unsplash.com/photo-1461023058943-07fcbe16d735?w=400', desc: 'Double-steeped for 24 hours and topped with a vanilla cold foam.' },
+            { id: 3, name: 'Almond Croissant', category: 'Pastry', price: 4.25, image: 'https://images.unsplash.com/photo-1555507036-ab1f4038808a?w=400', desc: 'Twice-baked French pastry filled with sweet almond frangipane.' },
+            { id: 4, name: 'Matcha Latte', category: 'Hot', price: 5.50, image: 'https://images.unsplash.com/photo-1515823064-d6e0c04616a7?w=400', desc: 'Ceremonial grade Japanese matcha whisked with velvety oat milk.' }
+        ];
+        
+        let cart = [];
+        let orders = [];
+        let revenue = 0;
+
+        // --- UTILS ---
+        function toast(msg, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const el = document.createElement('div');
+            el.className = `p-4 rounded-xl shadow-xl flex items-center gap-3 border animate-fade-in-up ${type === 'success' ? 'bg-white border-green-100 text-green-700' : 'bg-white border-red-100 text-red-700'}`;
+            el.innerHTML = `<i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i> <span>${msg}</span>`;
+            container.appendChild(el);
+            setTimeout(() => {
+                el.style.opacity = '0';
+                setTimeout(() => el.remove(), 500);
+            }, 3000);
+        }
+
+        // --- APP NAVIGATION ---
+        function showSection(id) {
+            document.querySelectorAll('main > section').forEach(s => s.classList.add('hidden'));
+            document.getElementById(`${id}-section`).classList.remove('hidden');
+            
+            // Toggle nav bar visibility
+            const nav = document.getElementById('main-nav');
+            nav.style.transform = id === 'admin' ? 'translateY(-100%)' : 'translateY(0)';
+            
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            
+            if(id === 'menu') renderCustomerMenu();
+            if(id === 'admin') {
+                showAdminTab('overview');
+                startClock();
+            }
+            if(id === 'checkout') updateCheckoutSummary();
+        }
+
+        // --- CUSTOMER: MENU ---
+        function renderCustomerMenu(catFilter = 'all') {
+            const grid = document.getElementById('menu-grid');
+            grid.innerHTML = '';
+            const filtered = catFilter === 'all' ? menuItems : menuItems.filter(i => i.category === catFilter);
+            
+            filtered.forEach(item => {
+                grid.innerHTML += `
+                    <div class="bg-white rounded-[32px] p-4 shadow-sm border border-gray-100 card-hover group">
+                        <div class="relative overflow-hidden rounded-[24px] aspect-square mb-6">
+                            <img src="${item.image}" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110">
+                            <div class="absolute inset-0 bg-black/10 group-hover:bg-black/20 transition-all"></div>
+                            <span class="absolute top-4 left-4 bg-white/90 backdrop-blur px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider text-[#6F4E37] shadow-sm">${item.category}</span>
+                        </div>
+                        <div class="px-2 pb-2">
+                            <div class="flex justify-between items-start mb-2">
+                                <h3 class="font-bold text-xl text-[#2C1810]">${item.name}</h3>
+                                <span class="font-bold text-[#6F4E37]">$${item.price.toFixed(2)}</span>
+                            </div>
+                            <p class="text-gray-400 text-xs leading-relaxed mb-6 line-clamp-2">${item.desc}</p>
+                            <button onclick="addToCart(${item.id})" class="w-full py-4 bg-gray-50 rounded-2xl font-bold text-[#6F4E37] hover:bg-[#6F4E37] hover:text-white transition-all flex items-center justify-center gap-2">
+                                <i class="fas fa-plus-circle"></i> Add to Cart
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function filterMenu(cat) {
+            document.querySelectorAll('.cat-filter').forEach(b => {
+                b.classList.remove('bg-[#6F4E37]', 'text-white', 'shadow-md');
+                b.classList.add('bg-white', 'border', 'text-gray-600');
+            });
+            event.target.classList.add('bg-[#6F4E37]', 'text-white', 'shadow-md');
+            event.target.classList.remove('bg-white', 'border', 'text-gray-600');
+            renderCustomerMenu(cat);
+        }
+
+        // --- CUSTOMER: CART ---
+        function addToCart(id) {
+            const item = menuItems.find(i => i.id === id);
+            const inCart = cart.find(i => i.id === id);
+            if(inCart) inCart.qty++;
+            else cart.push({...item, qty: 1});
+            
+            updateCartUI();
+            openSidebar();
+            toast(`Added ${item.name} to cart`);
+        }
+
+        function updateCartUI() {
+            const container = document.getElementById('cart-items');
+            const totalDisplay = document.getElementById('cart-total');
+            const subtotalDisplay = document.getElementById('cart-subtotal');
+            const taxDisplay = document.getElementById('cart-tax');
+            const countDisplay = document.getElementById('cart-count');
+            
+            container.innerHTML = cart.length === 0 ? `
+                <div class="h-full flex flex-col items-center justify-center text-center py-20">
+                    <div class="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mb-6 text-gray-300">
+                        <i class="fas fa-shopping-basket text-3xl"></i>
+                    </div>
+                    <p class="font-bold text-gray-400">Your basket is empty</p>
+                    <p class="text-gray-300 text-sm">Delicious brews are waiting!</p>
+                </div>
+            ` : '';
+
+            let subtotal = 0;
+            let count = 0;
+
+            cart.forEach(item => {
+                const itemTotal = item.price * item.qty;
+                subtotal += itemTotal;
+                count += item.qty;
+                container.innerHTML += `
+                    <div class="flex gap-5 group items-center">
+                        <img src="${item.image}" class="w-16 h-16 rounded-2xl object-cover shadow-sm">
+                        <div class="flex-grow">
+                            <h4 class="font-bold text-sm text-[#2C1810]">${item.name}</h4>
+                            <p class="text-xs text-gray-400">$${item.price.toFixed(2)} unit</p>
+                        </div>
+                        <div class="flex items-center bg-gray-50 rounded-xl p-1">
+                            <button onclick="changeQty(${item.id}, -1)" class="w-8 h-8 flex items-center justify-center hover:bg-white rounded-lg transition-colors"><i class="fas fa-minus text-[10px]"></i></button>
+                            <span class="w-8 text-center font-bold text-xs">${item.qty}</span>
+                            <button onclick="changeQty(${item.id}, 1)" class="w-8 h-8 flex items-center justify-center hover:bg-white rounded-lg transition-colors"><i class="fas fa-plus text-[10px]"></i></button>
+                        </div>
+                    </div>
+                `;
+            });
+
+            const tax = subtotal * 0.08;
+            const total = subtotal + tax;
+
+            subtotalDisplay.innerText = `$${subtotal.toFixed(2)}`;
+            taxDisplay.innerText = `$${tax.toFixed(2)}`;
+            totalDisplay.innerText = `$${total.toFixed(2)}`;
+            countDisplay.innerText = count;
+            
+            document.getElementById('cart-footer').classList.toggle('hidden', cart.length === 0);
+        }
+
+        function changeQty(id, delta) {
+            const item = cart.find(i => i.id === id);
+            item.qty += delta;
+            if(item.qty < 1) cart = cart.filter(i => i.id !== id);
+            updateCartUI();
+        }
+
+        function openSidebar() {
+            document.getElementById('cart-sidebar').classList.remove('translate-x-full');
+            document.getElementById('overlay').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeSidebar() {
+            document.getElementById('cart-sidebar').classList.add('translate-x-full');
+            document.getElementById('overlay').classList.add('hidden');
+            document.body.style.overflow = '';
+        }
+
+        // --- CHECKOUT LOGIC ---
+        function updateCheckoutSummary() {
+            const list = document.getElementById('checkout-summary-list');
+            const totalDisplay = document.getElementById('summary-total');
+            const subtotalDisplay = document.getElementById('summary-subtotal');
+            
+            list.innerHTML = '';
+            let subtotal = 0;
+            
+            cart.forEach(item => {
+                subtotal += item.price * item.qty;
+                list.innerHTML += `
+                    <div class="flex justify-between items-center text-sm">
+                        <div class="flex items-center gap-3">
+                            <span class="w-6 h-6 bg-white/10 rounded flex items-center justify-center text-[10px] font-bold">${item.qty}x</span>
+                            <span>${item.name}</span>
+                        </div>
+                        <span class="font-bold">$${(item.price * item.qty).toFixed(2)}</span>
+                    </div>
+                `;
+            });
+
+            subtotalDisplay.innerText = `$${subtotal.toFixed(2)}`;
+            totalDisplay.innerText = `$${(subtotal * 1.08).toFixed(2)}`;
+        }
+
+        document.getElementById('order-form').onsubmit = function(e) {
+            e.preventDefault();
+            const total = cart.reduce((acc, i) => acc + (i.price * i.qty), 0) * 1.08;
+            const newOrder = {
+                id: Date.now(),
+                name: document.getElementById('order-name').value,
+                phone: document.getElementById('order-phone').value,
+                address: document.getElementById('order-address').value,
+                items: [...cart],
+                total: total,
+                status: 'Pending',
+                time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            };
+            
+            orders.push(newOrder);
+            revenue += total;
+            document.getElementById('success-modal').classList.remove('hidden');
+        };
+
+        function resetUI() {
+            cart = [];
+            updateCartUI();
+            document.getElementById('order-form').reset();
+            document.getElementById('success-modal').classList.add('hidden');
+            showSection('hero');
+        }
+
+        // --- ADMIN: AUTH ---
+        function handleLogin() {
+            const pass = document.getElementById('admin-pass').value;
+            if(pass === 'admin') {
+                showSection('admin');
+                document.getElementById('admin-pass').value = '';
+                toast('Access Granted');
+            } else {
+                toast('Invalid credentials', 'error');
+            }
+        }
+
+        // --- ADMIN: TABS ---
+        function showAdminTab(tab) {
+            document.querySelectorAll('.admin-tab-btn').forEach(b => b.classList.remove('active-tab'));
+            event.currentTarget.classList.add('active-tab');
+            document.querySelectorAll('.admin-content-pane').forEach(p => p.classList.add('hidden'));
+            document.getElementById(`admin-${tab}`).classList.remove('hidden');
+            
+            if(tab === 'overview') updateOverviewStats();
+            if(tab === 'orders') renderAdminOrders();
+            if(tab === 'inventory') renderAdminInventory();
+        }
+
+        // --- ADMIN: OVERVIEW ---
+        function updateOverviewStats() {
+            document.getElementById('stat-revenue').innerText = `$${revenue.toFixed(2)}`;
+            document.getElementById('stat-orders').innerText = orders.length;
+            document.getElementById('stat-customers').innerText = new Set(orders.map(o => o.phone)).size;
+            document.getElementById('admin-order-count-badge').innerText = orders.filter(o => o.status === 'Pending').length;
+
+            // Activity Log
+            const activity = document.getElementById('activity-list');
+            activity.innerHTML = orders.length === 0 ? '<p class="text-slate-400 italic">No recent activity detected.</p>' : '';
+            orders.slice(-5).reverse().forEach(o => {
+                activity.innerHTML += `
+                    <div class="flex items-start gap-4">
+                        <div class="w-10 h-10 bg-slate-50 rounded-full flex items-center justify-center shrink-0">
+                            <i class="fas fa-bell text-xs text-slate-400"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm text-slate-700 font-bold">New order from ${o.name}</p>
+                            <p class="text-xs text-slate-400">${o.items.length} items • ${o.time}</p>
+                        </div>
+                        <span class="ml-auto text-[10px] font-bold text-green-500">+$${o.total.toFixed(2)}</span>
+                    </div>
+                `;
+            });
+
+            // Popular Item
+            if(orders.length > 0) {
+                const counts = {};
+                orders.forEach(o => o.items.forEach(i => counts[i.name] = (counts[i.name] || 0) + i.qty));
+                const top = Object.entries(counts).sort((a,b) => b[1] - a[1])[0][0];
+                document.getElementById('stat-top-item').innerText = top;
+            } else {
+                document.getElementById('stat-top-item').innerText = "N/A";
+            }
+
+            // Inventory Mini Health
+            const miniInv = document.getElementById('inventory-mini-list');
+            miniInv.innerHTML = '';
+            menuItems.forEach(item => {
+                miniInv.innerHTML += `
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm font-medium text-slate-600">${item.name}</span>
+                        <div class="flex items-center gap-2">
+                            <div class="w-32 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                                <div class="h-full bg-green-400" style="width: ${Math.random() * 50 + 50}%"></div>
+                            </div>
+                            <span class="text-[10px] font-bold text-slate-400 uppercase">Stable</span>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        // --- ADMIN: ORDERS ---
+        function renderAdminOrders() {
+            const list = document.getElementById('admin-orders-list');
+            list.innerHTML = orders.length === 0 ? '<tr><td colspan="6" class="p-20 text-center text-slate-300">No orders found in database.</td></tr>' : '';
+            
+            orders.slice().reverse().forEach(order => {
+                const statusClass = order.status === 'Completed' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700';
+                list.innerHTML += `
+                    <tr class="hover:bg-slate-50/50 transition-colors">
+                        <td class="p-6">
+                            <p class="text-[10px] font-mono font-bold text-slate-400">#GRND-${order.id.toString().slice(-6)}</p>
+                            <p class="text-xs text-slate-400">${order.time}</p>
+                        </td>
+                        <td class="p-6">
+                            <p class="font-bold text-slate-800">${order.name}</p>
+                            <p class="text-xs text-slate-500">${order.phone}</p>
+                        </td>
+                        <td class="p-6">
+                            <div class="max-w-[200px] truncate text-xs text-slate-600">
+                                ${order.items.map(i => `${i.qty}x ${i.name}`).join(', ')}
+                            </div>
+                        </td>
+                        <td class="p-6 font-bold text-slate-800">$${order.total.toFixed(2)}</td>
+                        <td class="p-6">
+                            <span class="status-badge ${statusClass}">${order.status}</span>
+                        </td>
+                        <td class="p-6 text-right">
+                            <button onclick="updateOrderStatus(${order.id})" class="text-[10px] font-bold px-4 py-2 bg-slate-800 text-white rounded-lg hover:bg-black transition-all">
+                                ${order.status === 'Pending' ? 'MARK COMPLETED' : 'ARCHIVE'}
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        function updateOrderStatus(id) {
+            const order = orders.find(o => o.id === id);
+            if(order.status === 'Pending') {
+                order.status = 'Completed';
+                toast(`Order #${id.toString().slice(-4)} completed`);
+            } else {
+                orders = orders.filter(o => o.id !== id);
+                toast('Order archived');
+            }
+            renderAdminOrders();
+            updateOverviewStats();
+        }
+
+        function clearAllOrders() {
+            if(confirm('Are you sure? This will wipe all transaction history.')) {
+                orders = [];
+                revenue = 0;
+                renderAdminOrders();
+                updateOverviewStats();
+                toast('Database reset successful');
+            }
+        }
+
+        // --- ADMIN: INVENTORY ---
+        function renderAdminInventory() {
+            const list = document.getElementById('admin-menu-list');
+            list.innerHTML = '';
+            menuItems.forEach(item => {
+                list.innerHTML += `
+                    <div class="bg-white p-5 rounded-3xl shadow-sm border border-slate-100 flex gap-5 group">
+                        <img src="${item.image}" class="w-20 h-20 rounded-2xl object-cover shadow-sm">
+                        <div class="flex-grow min-w-0">
+                            <div class="flex justify-between items-start">
+                                <h4 class="font-bold text-slate-800 truncate">${item.name}</h4>
+                                <span class="text-xs font-bold text-[#6F4E37]">$${item.price.toFixed(2)}</span>
+                            </div>
+                            <p class="text-[10px] text-slate-400 mb-4 font-bold uppercase tracking-wider">${item.category}</p>
+                            <div class="flex gap-3">
+                                <button onclick="editItem(${item.id})" class="text-[10px] font-bold text-blue-600 hover:text-blue-800">EDIT CONFIG</button>
+                                <button onclick="deleteItem(${item.id})" class="text-[10px] font-bold text-red-500 hover:text-red-700">REMOVE</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function openMenuModal() {
+            document.getElementById('menu-item-form').reset();
+            document.getElementById('edit-id').value = '';
+            document.getElementById('modal-title').innerText = 'Create New Menu Item';
+            document.getElementById('menu-modal').classList.remove('hidden');
+        }
+
+        function closeMenuModal() {
+            document.getElementById('menu-modal').classList.add('hidden');
+        }
+
+        document.getElementById('menu-item-form').onsubmit = function(e) {
+            e.preventDefault();
+            const editId = document.getElementById('edit-id').value;
+            const newItem = {
+                id: editId ? parseInt(editId) : Date.now(),
+                name: document.getElementById('m-name').value,
+                category: document.getElementById('m-cat').value,
+                price: parseFloat(document.getElementById('m-price').value),
+                image: document.getElementById('m-img').value,
+                desc: document.getElementById('m-desc').value
+            };
+
+            if(editId) {
+                const idx = menuItems.findIndex(i => i.id == editId);
+                menuItems[idx] = newItem;
+                toast('Item updated');
+            } else {
+                menuItems.push(newItem);
+                toast('New item added');
+            }
+
+            closeMenuModal();
+            renderAdminInventory();
+        };
+
+        function deleteItem(id) {
+            if(confirm('Remove this item from the public menu?')) {
+                menuItems = menuItems.filter(i => i.id !== id);
+                renderAdminInventory();
+                toast('Item removed', 'error');
+            }
+        }
+
+        function editItem(id) {
+            const item = menuItems.find(i => i.id === id);
+            document.getElementById('edit-id').value = item.id;
+            document.getElementById('m-name').value = item.name;
+            document.getElementById('m-cat').value = item.category;
+            document.getElementById('m-price').value = item.price;
+            document.getElementById('m-img').value = item.image;
+            document.getElementById('m-desc').value = item.desc;
+            document.getElementById('modal-title').innerText = 'Configure Item';
+            document.getElementById('menu-modal').classList.remove('hidden');
+        }
+
+        function startClock() {
+            setInterval(() => {
+                document.getElementById('current-time').innerText = new Date().toLocaleTimeString();
+            }, 1000);
+        }
+
+        // --- INIT ---
+        window.onload = () => {
+            renderCustomerMenu();
+            updateCartUI();
+        };
+    </script>
+</body>
+</html>
